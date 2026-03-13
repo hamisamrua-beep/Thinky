@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>the thinky place · cute thoughts</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600&family=Comfortaa:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="thoughts.css">
+</head>
+<body>
+    <!-- floating cuties -->
+    <div class="floating-circle"></div>
+    <div class="floating-circle-small"></div>
+    <div class="floating-star">✦</div>
+    <div class="floating-star" style="top: 20%; right: 5%;">☾</div>
+
+    <div class="thoughts-page">
+        <!-- header with silly title -->
+        <div class="header">
+            <div class="title-block">
+                <h1>
+                    the thinky place
+                    <span>where thoughts go on adventures</span>
+                </h1>
+                <div class="subtitle">
+                    ⚡ little thoughts · big feelings · random musings ⚡
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">movies</a>
+                <a href="thoughts.html" class="nav-link active">thinky place</a>
+                <a href="#" class="nav-link" id="openAdminBtn">secret spot</a>
+            </div>
+        </div>
+
+        <!-- silly stats -->
+        <div class="stats-banner">
+            <div class="stat-group">
+                <span class="stat-number" id="totalComments">0</span>
+                <span class="stat-label">sweet thoughts</span>
+            </div>
+            <span class="stat-divider">✦</span>
+            <div class="stat-group">
+                <span class="stat-number" id="todayComments">0</span>
+                <span class="stat-label">posted today</span>
+            </div>
+            <span class="stat-divider">✦</span>
+            <div class="stat-group">
+                <span class="stat-number" id="activeUsers">0</span>
+                <span class="stat-label">thinking right now</span>
+            </div>
+        </div>
+
+        <!-- two column layout -->
+        <div class="thoughts-layout">
+            <!-- LEFT COLUMN: drop a thought -->
+            <div class="drop-spot">
+                <h2>
+                    drop a thought ✨
+                    <span>like a note in a bottle</span>
+                </h2>
+                
+                <div class="silly-quote">
+                    "sometimes you just gotta say what you're thinking — even if it's silly, even if it's small, even if it's just 'wow, clouds are pretty today'"
+                    <span class="quote-author">— a very wise potato</span>
+                </div>
+                
+                <form id="commentForm" class="cute-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">call me...</label>
+                            <input type="text" id="name" placeholder="your name (or don't!)">
+                        </div>
+                        <div class="anonymous-toggle">
+                            <input type="checkbox" id="anonymousCheck" checked>
+                            <label for="anonymousCheck">🕵️‍♀️ stay sneaky</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="comment">your thought <span class="cute-star">🌸</span></label>
+                        <textarea id="comment" class="thought-input" placeholder="type something cute or deep or both..."></textarea>
+                    </div>
+                    
+                    <div class="silly-test">
+                        <span>🧸 quick check: what's 2 + 2? (we know you know!)</span>
+                        <input type="number" id="captcha" required>
+                    </div>
+                    
+                    <button type="submit" class="cute-btn">✨ send it into the universe ✨</button>
+                </form>
+                
+                <div class="cozy-note">
+                    <p>🧦 be kind · be cozy · be you 🧦</p>
+                    <p style="font-size: 0.85rem;">every thought is like a little hug for the internet</p>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: thoughts feed -->
+            <div class="feed-spot">
+                <div class="feed-header">
+                    <h3>recent thinkies 💭</h3>
+                    <select class="feed-sort" id="sortComments">
+                        <option value="newest">newest first ✨</option>
+                        <option value="popular">most loved ❤️</option>
+                        <option value="oldest">oldies but goodies 📦</option>
+                    </select>
+                </div>
+                
+                <div class="thoughts-feed" id="commentsContainer">
+                    <!-- comments go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- secret admin login (shh!) -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-flourish">🔐</div>
+            <h2 class="modal-title">shh! secret spot</h2>
+            <input type="password" id="adminPassword" class="modal-input" placeholder="whisper the password...">
+            <div class="modal-actions">
+                <button class="modal-btn" id="adminLoginBtn">peek inside</button>
+                <button class="modal-btn" id="adminCancelBtn">nevermind</button>
+            </div>
+            <div id="loginError" class="modal-error"></div>
+        </div>
+    </div>
+
+    <!-- toasties for notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JavaScript -->
+    <script src="thoughts.js"></script>
+</body>
+</html>
