@@ -7,6 +7,21 @@ const SHEETDB_URL = 'https://sheetdb.io/api/v1/YOUR_API_KEY_HERE';
 const ADMIN_PASSWORD = 'cute123';
 
 // ===============================================================
+// BACK TO TOP
+// ===============================================================
+const backToTop = document.getElementById('backToTop');
+
+if (backToTop) {
+    window.addEventListener('scroll', () => {
+        backToTop.classList.toggle('visible', window.scrollY > 300);
+    });
+
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+// ===============================================================
 // FETCH COMMENTS FROM SHEETDB
 // ===============================================================
 async function getComments() {
@@ -247,4 +262,188 @@ document.addEventListener('DOMContentLoaded', function() {
 // ===============================================================
 window.toggleLike = async function(commentId, currentLikes) {
     const liked = localStorage.getItem(`liked-${commentId}`);
-    let newL
+    let newLikes;
+    
+    if (liked) {
+        newLikes = currentLikes - 1;
+        localStorage.removeItem(`liked-${commentId}`);
+        showToast('💔 un-liked');
+    } else {
+        newLikes = currentLikes + 1;
+        localStorage.setItem(`liked-${commentId}`, 'true');
+        showToast('❤️ liked!');
+    }
+    
+    // Update the display immediately (optimistic update)
+    const likesSpan = document.getElementById(`likes-${commentId}`);
+    if (likesSpan) {
+        likesSpan.textContent = newLikes;
+    }
+    
+    // Update the button class
+    const likeBtn = event.target;
+    if (likeBtn) {
+        if (liked) {
+            likeBtn.classList.remove('liked');
+        } else {
+            likeBtn.classList.add('liked');
+        }
+    }
+    
+    // Then update in SheetDB
+    await updateLikes(commentId, newLikes);
+};
+
+// ===============================================================
+// SHOW REPLY FORM
+// ===============================================================
+window.showReplyForm = function(commentId) {
+    const form = document.getElementById(`reply-form-${commentId}`);
+    if (form) {
+        form.classList.toggle('show');
+    }
+};
+
+// ===============================================================
+// POST REPLY
+// ===============================================================
+window.postReply = async function(parentId) {
+    const nameInput = document.getElementById(`reply-name-${parentId}`);
+    const textInput = document.getElementById(`reply-text-${parentId}`);
+    
+    if (!nameInput || !textInput) return;
+    
+    const name = nameInput.value.trim() || 'sneaky friend';
+    const text = textInput.value.trim();
+    
+    if (!text) {
+        showToast('🤔 write something first!');
+        return;
+    }
+    
+    const success = await saveComment({
+        name: name,
+        comment: text,
+        anonymous: name === 'sneaky friend',
+        parent_id: parentId
+    });
+    
+    if (success) {
+        document.getElementById(`reply-form-${parentId}`).classList.remove('show');
+        nameInput.value = '';
+        textInput.value = '';
+        await displayComments();
+        showToast('✨ reply posted!');
+    }
+};
+
+// ===============================================================
+// FORMAT DATE
+// ===============================================================
+function formatDate(dateString) {
+    if (!dateString) return 'just now';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    // If date is invalid, return 'just now'
+    if (isNaN(date.getTime())) return 'just now';
+    
+    if (diff < 60000) {
+        return 'just now';
+    }
+    if (diff < 3600000) {
+        const mins = Math.floor(diff / 60000);
+        return mins + (mins === 1 ? ' min ago' : ' mins ago');
+    }
+    if (diff < 86400000) {
+        const hours = Math.floor(diff / 3600000);
+        return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+    }
+    if (diff < 172800000) return 'yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ===============================================================
+// UPDATE STATS
+// ===============================================================
+async function updateStats(totalComments) {
+    document.getElementById('totalComments').textContent = totalComments;
+    
+    const comments = await getComments();
+    const today = new Date().toDateString();
+    const todayComments = comments.filter(c => {
+        if (!c.date) return false;
+        const commentDate = new Date(c.date).toDateString();
+        return commentDate === today;
+    }).length;
+    
+    document.getElementById('todayComments').textContent = todayComments;
+    document.getElementById('activeUsers').textContent = Math.floor(Math.random() * 10) + 4;
+}
+
+// ===============================================================
+// SHOW TOAST
+// ===============================================================
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// ===============================================================
+// SORT COMMENTS
+// ===============================================================
+document.getElementById('sortComments')?.addEventListener('change', displayComments);
+
+// ===============================================================
+// INITIAL LOAD
+// ===============================================================
+displayComments();
+
+// ===============================================================
+// REFRESH EVERY 30 SECONDS
+// ===============================================================
+setInterval(displayComments, 30000);
+
+// ===============================================================
+// ADMIN MODAL
+// ===============================================================
+const loginModal = document.getElementById('loginModal');
+const openAdminBtn = document.getElementById('openAdminBtn');
+const adminLoginBtn = document.getElementById('adminLoginBtn');
+const adminCancelBtn = document.getElementById('adminCancelBtn');
+const adminPassword = document.getElementById('adminPassword');
+const loginError = document.getElementById('loginError');
+
+openAdminBtn?.addEventListener('click', () => {
+    loginModal.style.display = 'flex';
+    adminPassword.value = '';
+    loginError.textContent = '';
+});
+
+adminLoginBtn?.addEventListener('click', () => {
+    if (adminPassword.value === ADMIN_PASSWORD) {
+        loginModal.style.display = 'none';
+        showToast('✨ welcome to the secret spot!');
+        // Optional: redirect to admin panel or show admin controls
+    } else {
+        loginError.textContent = 'nope! try again ✨';
+        showToast('🔐 wrong password!', 'error');
+    }
+});
+
+adminCancelBtn?.addEventListener('click', () => {
+    loginModal.style.display = 'none';
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+    if (e.target === loginModal) {
+        loginModal.style.display = 'none';
+    }
+});
