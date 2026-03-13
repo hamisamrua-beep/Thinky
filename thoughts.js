@@ -1,10 +1,137 @@
 // ===============================================================
-// SHEETDB CONFIGURATION
+// THOUGHTS PAGE - Using Local Storage (No SheetDB needed)
 // ===============================================================
-// IMPORTANT: Replace this URL with your actual SheetDB API URL!
-// Get one for free at https://sheetdb.io
-const SHEETDB_URL = 'https://sheetdb.io/api/v1/tv79omjmeb41g'; 
 const ADMIN_PASSWORD = 'cute123';
+const STORAGE_KEY = 'thinky_place_comments';
+
+// ===============================================================
+// INITIALIZE SAMPLE DATA
+// ===============================================================
+const sampleComments = [
+    {
+        id: '1',
+        name: 'cozy potato',
+        comment: 'clouds are looking extra fluffy today ☁️',
+        date: new Date().toISOString(),
+        likes: 5,
+        anonymous: false,
+        parent_id: null,
+        replies: []
+    },
+    {
+        id: '2',
+        name: 'sneaky friend',
+        comment: 'just wanted to say that everyone here is valid and loved! 💕',
+        date: new Date(Date.now() - 3600000).toISOString(),
+        likes: 12,
+        anonymous: true,
+        parent_id: null,
+        replies: []
+    },
+    {
+        id: '3',
+        name: 'thoughtful human',
+        comment: 'does anyone else think about how amazing it is that we exist??',
+        date: new Date(Date.now() - 86400000).toISOString(),
+        likes: 8,
+        anonymous: false,
+        parent_id: null,
+        replies: []
+    }
+];
+
+// Initialize localStorage with sample data if empty
+if (!localStorage.getItem(STORAGE_KEY)) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleComments));
+}
+
+// ===============================================================
+// GET COMMENTS
+// ===============================================================
+function getComments() {
+    try {
+        const comments = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        console.log('Comments from localStorage:', comments);
+        return comments;
+    } catch (error) {
+        console.error('Error loading comments:', error);
+        return [];
+    }
+}
+
+// ===============================================================
+// SAVE COMMENT
+// ===============================================================
+function saveComment(comment) {
+    try {
+        const comments = getComments();
+        
+        // Create new comment object
+        const newComment = {
+            id: Date.now().toString(), // Simple unique ID
+            name: comment.name || 'anonymous',
+            comment: comment.comment,
+            date: new Date().toISOString(),
+            likes: 0,
+            anonymous: comment.anonymous || false,
+            parent_id: comment.parent_id || null,
+            replies: []
+        };
+        
+        comments.push(newComment);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+        
+        showToast('✨ thought sent to the universe!');
+        return true;
+    } catch (error) {
+        console.error('Error saving comment:', error);
+        showToast('🌈 something went wrong... try again?', 'error');
+        return false;
+    }
+}
+
+// ===============================================================
+// UPDATE LIKES
+// ===============================================================
+function updateLikes(commentId, newLikes) {
+    try {
+        const comments = getComments();
+        const commentIndex = comments.findIndex(c => c.id === commentId);
+        
+        if (commentIndex !== -1) {
+            comments[commentIndex].likes = newLikes;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+            console.log('Likes updated');
+        }
+    } catch (error) {
+        console.error('Error updating likes:', error);
+    }
+}
+
+// ===============================================================
+// ADD REPLY
+// ===============================================================
+function addReply(parentId, replyData) {
+    try {
+        const comments = getComments();
+        const newReply = {
+            id: Date.now().toString() + '-reply',
+            name: replyData.name || 'sneaky friend',
+            comment: replyData.comment,
+            date: new Date().toISOString(),
+            likes: 0,
+            anonymous: replyData.anonymous || true,
+            parent_id: parentId
+        };
+        
+        comments.push(newReply);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+        return true;
+    } catch (error) {
+        console.error('Error adding reply:', error);
+        return false;
+    }
+}
 
 // ===============================================================
 // BACK TO TOP
@@ -22,124 +149,17 @@ if (backToTop) {
 }
 
 // ===============================================================
-// FETCH COMMENTS FROM SHEETDB
-// ===============================================================
-async function getComments() {
-    try {
-        const response = await fetch(SHEETDB_URL);
-        const data = await response.json();
-        console.log('Raw data from SheetDB:', data);
-        
-        return data.map(row => ({
-            id: row.id,
-            name: row.name || 'anonymous',
-            comment: row.comment || '',
-            date: row.date || new Date().toISOString(),
-            likes: parseInt(row.likes) || 0,
-            anonymous: row.anonymous === 'TRUE' || row.anonymous === 'true',
-            parent_id: row.parent_id && row.parent_id !== 'undefined' ? row.parent_id : null
-        }));
-    } catch (error) {
-        console.error('Error fetching comments:', error);
-        showToast('🤔 having trouble connecting to the thought cloud...', 'error');
-        return [];
-    }
-}
-
-// ===============================================================
-// SAVE COMMENT TO SHEETDB
-// ===============================================================
-async function saveComment(comment) {
-    try {
-        const now = new Date();
-        const formattedDate = now.toISOString();
-        
-        console.log('Saving comment with date:', formattedDate);
-        
-        const response = await fetch(SHEETDB_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                data: [{
-                    name: comment.name || 'anonymous',
-                    comment: comment.comment,
-                    date: formattedDate,
-                    likes: '0',
-                    anonymous: comment.anonymous ? 'TRUE' : 'FALSE',
-                    parent_id: comment.parent_id || ''
-                }]
-            })
-        });
-        
-        if (response.ok) {
-            showToast('✨ thought sent to the universe!');
-            return true;
-        } else {
-            const errorText = await response.text();
-            console.error('SheetDB error:', errorText);
-            throw new Error('Failed to save');
-        }
-    } catch (error) {
-        console.error('Error saving comment:', error);
-        showToast('🌈 thought got lost in the clouds... try again?', 'error');
-        return false;
-    }
-}
-
-// ===============================================================
-// UPDATE LIKES IN SHEETDB
-// ===============================================================
-async function updateLikes(commentId, newLikes) {
-    try {
-        console.log(`Updating likes for ${commentId} to ${newLikes}`);
-        
-        const response = await fetch(`${SHEETDB_URL}/id/${commentId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                data: {
-                    likes: newLikes.toString()
-                }
-            })
-        });
-        
-        if (response.ok) {
-            console.log('Likes updated successfully');
-        } else {
-            console.error('Failed to update likes');
-        }
-    } catch (error) {
-        console.error('Error updating likes:', error);
-    }
-}
-
-// ===============================================================
 // DISPLAY COMMENTS
 // ===============================================================
 async function displayComments() {
     const container = document.getElementById('commentsContainer');
     if (!container) return;
     
-    // Show loading state
-    container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; color: #d9aa8b;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">☁️</div>
-            <p>gathering thoughts from the cloud...</p>
-        </div>
-    `;
-    
-    const comments = await getComments();
-    console.log('All comments:', comments);
+    const comments = getComments();
     
     // Separate top-level comments from replies
     const topLevelComments = comments.filter(c => !c.parent_id);
     const replies = comments.filter(c => c.parent_id);
-    
-    console.log('Top level:', topLevelComments.length, 'Replies:', replies.length);
     
     const sortBy = document.getElementById('sortComments')?.value || 'newest';
     
@@ -242,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const success = await saveComment({
+            const success = saveComment({
                 name: name,
                 comment: comment,
                 anonymous: anonymous
@@ -274,7 +294,7 @@ window.toggleLike = async function(commentId, currentLikes) {
         showToast('❤️ liked!');
     }
     
-    // Update the display immediately (optimistic update)
+    // Update the display immediately
     const likesSpan = document.getElementById(`likes-${commentId}`);
     if (likesSpan) {
         likesSpan.textContent = newLikes;
@@ -290,8 +310,8 @@ window.toggleLike = async function(commentId, currentLikes) {
         }
     }
     
-    // Then update in SheetDB
-    await updateLikes(commentId, newLikes);
+    // Update in localStorage
+    updateLikes(commentId, newLikes);
 };
 
 // ===============================================================
@@ -321,11 +341,10 @@ window.postReply = async function(parentId) {
         return;
     }
     
-    const success = await saveComment({
+    const success = addReply(parentId, {
         name: name,
         comment: text,
-        anonymous: name === 'sneaky friend',
-        parent_id: parentId
+        anonymous: name === 'sneaky friend'
     });
     
     if (success) {
@@ -347,12 +366,9 @@ function formatDate(dateString) {
     const now = new Date();
     const diff = now - date;
     
-    // If date is invalid, return 'just now'
     if (isNaN(date.getTime())) return 'just now';
     
-    if (diff < 60000) {
-        return 'just now';
-    }
+    if (diff < 60000) return 'just now';
     if (diff < 3600000) {
         const mins = Math.floor(diff / 60000);
         return mins + (mins === 1 ? ' min ago' : ' mins ago');
@@ -368,10 +384,15 @@ function formatDate(dateString) {
 // ===============================================================
 // UPDATE STATS
 // ===============================================================
-async function updateStats(totalComments) {
-    document.getElementById('totalComments').textContent = totalComments;
+function updateStats(totalComments) {
+    const totalEl = document.getElementById('totalComments');
+    const todayEl = document.getElementById('todayComments');
+    const activeEl = document.getElementById('activeUsers');
     
-    const comments = await getComments();
+    if (totalEl) totalEl.textContent = totalComments;
+    
+    // Calculate today's comments
+    const comments = getComments();
     const today = new Date().toDateString();
     const todayComments = comments.filter(c => {
         if (!c.date) return false;
@@ -379,8 +400,8 @@ async function updateStats(totalComments) {
         return commentDate === today;
     }).length;
     
-    document.getElementById('todayComments').textContent = todayComments;
-    document.getElementById('activeUsers').textContent = Math.floor(Math.random() * 10) + 4;
+    if (todayEl) todayEl.textContent = todayComments;
+    if (activeEl) activeEl.textContent = Math.floor(Math.random() * 10) + 4;
 }
 
 // ===============================================================
@@ -388,6 +409,8 @@ async function updateStats(totalComments) {
 // ===============================================================
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.textContent = message;
@@ -406,11 +429,6 @@ document.getElementById('sortComments')?.addEventListener('change', displayComme
 displayComments();
 
 // ===============================================================
-// REFRESH EVERY 30 SECONDS
-// ===============================================================
-setInterval(displayComments, 30000);
-
-// ===============================================================
 // ADMIN MODAL
 // ===============================================================
 const loginModal = document.getElementById('loginModal');
@@ -420,30 +438,38 @@ const adminCancelBtn = document.getElementById('adminCancelBtn');
 const adminPassword = document.getElementById('adminPassword');
 const loginError = document.getElementById('loginError');
 
-openAdminBtn?.addEventListener('click', () => {
-    loginModal.style.display = 'flex';
-    adminPassword.value = '';
-    loginError.textContent = '';
-});
+if (openAdminBtn) {
+    openAdminBtn.addEventListener('click', () => {
+        if (loginModal) {
+            loginModal.style.display = 'flex';
+            if (adminPassword) adminPassword.value = '';
+            if (loginError) loginError.textContent = '';
+        }
+    });
+}
 
-adminLoginBtn?.addEventListener('click', () => {
-    if (adminPassword.value === ADMIN_PASSWORD) {
-        loginModal.style.display = 'none';
-        showToast('✨ welcome to the secret spot!');
-        // Optional: redirect to admin panel or show admin controls
-    } else {
-        loginError.textContent = 'nope! try again ✨';
-        showToast('🔐 wrong password!', 'error');
-    }
-});
+if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', () => {
+        if (adminPassword && adminPassword.value === ADMIN_PASSWORD) {
+            if (loginModal) loginModal.style.display = 'none';
+            showToast('✨ welcome to the secret spot!');
+        } else {
+            if (loginError) loginError.textContent = 'nope! try again ✨';
+            showToast('🔐 wrong password!', 'error');
+        }
+    });
+}
 
-adminCancelBtn?.addEventListener('click', () => {
-    loginModal.style.display = 'none';
-});
+if (adminCancelBtn) {
+    adminCancelBtn.addEventListener('click', () => {
+        if (loginModal) loginModal.style.display = 'none';
+    });
+}
 
-// Close modal when clicking outside
-window.addEventListener('click', (e) => {
-    if (e.target === loginModal) {
-        loginModal.style.display = 'none';
-    }
-});
+if (loginModal) {
+    window.addEventListener('click', (e) => {
+        if (e.target === loginModal) {
+            loginModal.style.display = 'none';
+        }
+    });
+}
