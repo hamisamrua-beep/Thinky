@@ -138,7 +138,8 @@ body {
     }
 }
 
-.hamisa::before, .hamisa::after {
+.hamisa::before,
+.hamisa::after {
     content: "☾";
     display: inline-block;
     font-size: 1.8rem;
@@ -246,7 +247,8 @@ body {
     flex-wrap: wrap;
 }
 
-.search-container input, .search-container select {
+.search-container input,
+.search-container select {
     padding: 0.8rem 1.2rem;
     background: #f3e9d2;
     border: 2px solid #e2d2bb;
@@ -259,7 +261,8 @@ body {
     min-width: 200px;
 }
 
-.search-container input:focus, .search-container select:focus {
+.search-container input:focus,
+.search-container select:focus {
     outline: none;
     border-color: #bfaa97;
     background: #fef9f0;
@@ -584,7 +587,8 @@ body {
     letter-spacing: 0.5px;
 }
 
-.form-group input, .form-group textarea {
+.form-group input,
+.form-group textarea {
     width: 100%;
     padding: 0.8rem 1.2rem;
     background: #fef9f0;
@@ -596,7 +600,8 @@ body {
     transition: all 0.2s;
 }
 
-.form-group input:focus, .form-group textarea:focus {
+.form-group input:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: #bfaa97;
     background: #fffbf5;
