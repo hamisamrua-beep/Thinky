@@ -50,7 +50,7 @@ function getShows() {
 function saveShows(shows) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(shows));
     renderReviews();
-    if (document.getElementById('admin-section').classList.contains('active')) {
+    if (document.getElementById('admin-section') && document.getElementById('admin-section').classList.contains('active')) {
         renderAdminList();
         updateStats();
     }
@@ -61,6 +61,8 @@ function saveShows(shows) {
 // ===============================================================
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
@@ -72,104 +74,153 @@ function showToast(message, type = 'info') {
 }
 
 // ===============================================================
-// LANDING PAGE
+// LANDING PAGE - FIXED VERSION
 // ===============================================================
-const landingSection = document.getElementById('landing-section');
-const reviewsSection = document.getElementById('reviews-section');
-const landingCanvas = document.getElementById('landingCanvas');
-
-setTimeout(() => {
-    if (!landingSection.classList.contains('hidden')) {
-        transitionToReviews();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, setting up landing page...');
+    
+    const landingSection = document.getElementById('landing-section');
+    const reviewsSection = document.getElementById('reviews-section');
+    const landingCanvas = document.getElementById('landingCanvas');
+    
+    // Check if elements exist
+    if (!landingSection || !reviewsSection || !landingCanvas) {
+        console.error('Missing required elements!');
+        return;
     }
-}, 3000);
-
-landingCanvas.addEventListener('click', transitionToReviews);
-
-function transitionToReviews() {
-    landingSection.classList.add('hidden');
+    
+    // Function to transition to reviews
+    function transitionToReviews() {
+        console.log('Transitioning to reviews...');
+        landingSection.classList.add('hidden');
+        
+        setTimeout(() => {
+            landingSection.style.display = 'none';
+            reviewsSection.classList.add('visible');
+            renderReviews();
+            console.log('Transition complete');
+        }, 800);
+    }
+    
+    // Auto transition after 3 seconds
     setTimeout(() => {
-        landingSection.style.display = 'none';
-        reviewsSection.classList.add('visible');
-        renderReviews();
-    }, 800);
-}
+        if (!landingSection.classList.contains('hidden')) {
+            console.log('Auto transition triggered');
+            transitionToReviews();
+        }
+    }, 3000);
+    
+    // Click handler
+    landingCanvas.addEventListener('click', function() {
+        console.log('Canvas clicked');
+        transitionToReviews();
+    });
+    
+    // MANUAL OVERRIDE: If you're stuck, click anywhere on the page
+    document.addEventListener('keydown', function(e) {
+        // Press 'Escape' to force transition
+        if (e.key === 'Escape') {
+            console.log('Escape pressed - forcing transition');
+            transitionToReviews();
+        }
+    });
+    
+    // Add a small hint
+    console.log('Click the canvas or wait 3 seconds to enter. Press ESC if stuck.');
+});
 
 // ===============================================================
 // AUTHENTICATION
 // ===============================================================
-let isAuthenticated = sessionStorage.getItem('hamisa_auth') === 'true';
-
-const loginModal = document.getElementById('loginModal');
-const openAdminBtn = document.getElementById('open-admin-btn');
-const loginSubmitBtn = document.getElementById('loginSubmitBtn');
-const loginCancelBtn = document.getElementById('loginCancelBtn');
-const passwordInput = document.getElementById('passwordInput');
-const loginError = document.getElementById('loginError');
-
-openAdminBtn.addEventListener('click', () => {
-    loginModal.style.display = 'flex';
-    passwordInput.value = '';
-    loginError.textContent = '';
-    passwordInput.focus();
-});
-
-loginSubmitBtn.addEventListener('click', () => {
-    if (passwordInput.value === ADMIN_PASSWORD) {
-        isAuthenticated = true;
-        sessionStorage.setItem('hamisa_auth', 'true');
-        loginModal.style.display = 'none';
-        showToast('welcome, admin', 'success');
-        
-        // Show admin section
-        reviewsSection.classList.remove('visible');
-        document.getElementById('admin-section').classList.add('active');
-        renderAdminList();
-        updateStats();
-    } else {
-        loginError.textContent = 'incorrect password';
-        passwordInput.value = '';
-        showToast('incorrect password', 'error');
+document.addEventListener('DOMContentLoaded', function() {
+    const loginModal = document.getElementById('loginModal');
+    const openAdminBtn = document.getElementById('open-admin-btn');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const loginCancelBtn = document.getElementById('loginCancelBtn');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginError = document.getElementById('loginError');
+    const backToReviewsBtn = document.getElementById('back-to-reviews-btn');
+    
+    if (openAdminBtn) {
+        openAdminBtn.addEventListener('click', () => {
+            if (loginModal) {
+                loginModal.style.display = 'flex';
+                if (passwordInput) {
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+                if (loginError) loginError.textContent = '';
+            }
+        });
     }
-});
-
-loginCancelBtn.addEventListener('click', () => {
-    loginModal.style.display = 'none';
-    loginError.textContent = '';
-});
-
-passwordInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') loginSubmitBtn.click();
-});
-
-loginModal.addEventListener('click', (e) => {
-    if (e.target === loginModal) {
-        loginModal.style.display = 'none';
-        loginError.textContent = '';
+    
+    if (loginSubmitBtn) {
+        loginSubmitBtn.addEventListener('click', () => {
+            if (passwordInput && passwordInput.value === ADMIN_PASSWORD) {
+                sessionStorage.setItem('hamisa_auth', 'true');
+                if (loginModal) loginModal.style.display = 'none';
+                showToast('welcome, admin', 'success');
+                
+                // Show admin section
+                const reviewsSection = document.getElementById('reviews-section');
+                const adminSection = document.getElementById('admin-section');
+                
+                if (reviewsSection) reviewsSection.classList.remove('visible');
+                if (adminSection) adminSection.classList.add('active');
+                
+                renderAdminList();
+                updateStats();
+            } else {
+                if (loginError) loginError.textContent = 'incorrect password';
+                if (passwordInput) passwordInput.value = '';
+                showToast('incorrect password', 'error');
+            }
+        });
     }
-});
-
-// Back to reviews button
-document.getElementById('back-to-reviews-btn').addEventListener('click', () => {
-    document.getElementById('admin-section').classList.remove('active');
-    reviewsSection.classList.add('visible');
+    
+    if (loginCancelBtn) {
+        loginCancelBtn.addEventListener('click', () => {
+            if (loginModal) loginModal.style.display = 'none';
+            if (loginError) loginError.textContent = '';
+        });
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && loginSubmitBtn) loginSubmitBtn.click();
+        });
+    }
+    
+    if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.style.display = 'none';
+                if (loginError) loginError.textContent = '';
+            }
+        });
+    }
+    
+    // Back to reviews button
+    if (backToReviewsBtn) {
+        backToReviewsBtn.addEventListener('click', () => {
+            const adminSection = document.getElementById('admin-section');
+            const reviewsSection = document.getElementById('reviews-section');
+            
+            if (adminSection) adminSection.classList.remove('active');
+            if (reviewsSection) reviewsSection.classList.add('visible');
+        });
+    }
 });
 
 // ===============================================================
 // REVIEWS PAGE
 // ===============================================================
-const grid = document.getElementById('reviewGrid');
-const counterNote = document.getElementById('counterNote');
-const modalOverlay = document.getElementById('reviewModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalReview = document.getElementById('modalReview');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const shareModalBtn = document.getElementById('shareModalBtn');
-const searchInput = document.getElementById('searchInput');
-const yearFilter = document.getElementById('yearFilter');
-const sortFilter = document.getElementById('sortFilter');
-
 function renderReviews() {
+    const grid = document.getElementById('reviewGrid');
+    const counterNote = document.getElementById('counterNote');
+    
+    if (!grid || !counterNote) return;
+    
     const shows = getShows();
     grid.innerHTML = '';
 
@@ -199,9 +250,15 @@ function renderReviews() {
         `;
 
         card.addEventListener('click', () => {
-            modalTitle.textContent = show.title;
-            modalReview.textContent = show.reviewText;
-            modalOverlay.style.display = 'flex';
+            const modalOverlay = document.getElementById('reviewModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalReview = document.getElementById('modalReview');
+            
+            if (modalTitle && modalReview && modalOverlay) {
+                modalTitle.textContent = show.title;
+                modalReview.textContent = show.reviewText;
+                modalOverlay.style.display = 'flex';
+            }
         });
 
         grid.appendChild(card);
@@ -210,197 +267,247 @@ function renderReviews() {
     counterNote.innerHTML = `<span>✦ ${shows.length} shows · click any card ✦</span>`;
 }
 
-// Modal handlers
-closeModalBtn.addEventListener('click', () => {
-    modalOverlay.style.display = 'none';
-});
-
-shareModalBtn.addEventListener('click', () => {
-    const text = `${modalTitle.textContent}\n\n${modalReview.textContent}`;
-    navigator.clipboard.writeText(text).then(() => {
-        showToast('copied to clipboard', 'success');
-    });
-});
-
-modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) {
-        modalOverlay.style.display = 'none';
+// ===============================================================
+// MODAL HANDLERS
+// ===============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const modalOverlay = document.getElementById('reviewModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const shareModalBtn = document.getElementById('shareModalBtn');
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            if (modalOverlay) modalOverlay.style.display = 'none';
+        });
+    }
+    
+    if (shareModalBtn) {
+        shareModalBtn.addEventListener('click', () => {
+            const modalTitle = document.getElementById('modalTitle');
+            const modalReview = document.getElementById('modalReview');
+            
+            if (modalTitle && modalReview) {
+                const text = `${modalTitle.textContent}\n\n${modalReview.textContent}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('copied to clipboard', 'success');
+                });
+            }
+        });
+    }
+    
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.style.display = 'none';
+            }
+        });
     }
 });
 
-// Search (simple)
-searchInput.addEventListener('input', () => {
-    const term = searchInput.value.toLowerCase();
-    const cards = document.querySelectorAll('.review-card');
-    cards.forEach(card => {
-        const title = card.querySelector('.film-title').textContent.toLowerCase();
-        const director = card.querySelector('.film-director').textContent.toLowerCase();
-        if (title.includes(term) || director.includes(term)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
+// ===============================================================
+// SEARCH
+// ===============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const term = searchInput.value.toLowerCase();
+            const cards = document.querySelectorAll('.review-card');
+            cards.forEach(card => {
+                const title = card.querySelector('.film-title')?.textContent.toLowerCase() || '';
+                const director = card.querySelector('.film-director')?.textContent.toLowerCase() || '';
+                if (title.includes(term) || director.includes(term)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
 });
 
 // ===============================================================
 // ADMIN PANEL
 // ===============================================================
-const showForm = document.getElementById('showForm');
-const titleInput = document.getElementById('title');
-const directorInput = document.getElementById('director');
-const yearInput = document.getElementById('year');
-const reviewInput = document.getElementById('reviewText');
-const saveBtn = document.getElementById('saveBtn');
-const clearBtn = document.getElementById('clearBtn');
-const showsContainer = document.getElementById('showsContainer');
-const showCount = document.getElementById('showCount');
-const adminStatus = document.getElementById('adminStatus');
-const exportBtn = document.getElementById('exportBtn');
-const importBtn = document.getElementById('importBtn');
-const importFile = document.getElementById('importFile');
-
-let editingIndex = null;
-
-function updateStats() {
-    const shows = getShows();
-    document.getElementById('statsDashboard').innerHTML = `
-        <div class="stat-card">
-            <div class="stat-value">${shows.length}</div>
-            <div class="stat-label">total shows</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${new Set(shows.map(s => s.year)).size}</div>
-            <div class="stat-label">years</div>
-        </div>
-    `;
-}
-
-function renderAdminList() {
-    const shows = getShows();
-    showCount.textContent = shows.length;
-
-    showsContainer.innerHTML = shows.map((show, index) => `
-        <div class="show-item">
-            <div>
-                <strong>${show.title}</strong> ${show.year ? '(' + show.year + ')' : ''}
-                <br><small>${show.director || ''}</small>
-            </div>
-            <div class="show-actions">
-                <button onclick="editShow(${index})">edit</button>
-                <button onclick="deleteShow(${index})" style="background:#e8cfc0;">delete</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-window.editShow = function(index) {
-    const shows = getShows();
-    const show = shows[index];
-    titleInput.value = show.title;
-    directorInput.value = show.director || '';
-    yearInput.value = show.year || '';
-    reviewInput.value = show.reviewText;
-    editingIndex = index;
-    saveBtn.textContent = '✎ update show';
-};
-
-window.deleteShow = function(index) {
-    if (confirm('delete this show?')) {
-        const shows = getShows();
-        shows.splice(index, 1);
-        saveShows(shows);
-        renderAdminList();
-        updateStats();
-        showToast('show deleted', 'success');
-        if (editingIndex === index) clearForm();
-    }
-};
-
-function clearForm() {
-    titleInput.value = '';
-    directorInput.value = '';
-    yearInput.value = '';
-    reviewInput.value = '';
-    editingIndex = null;
-    saveBtn.textContent = '➕ add show';
-}
-
-showForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    const showForm = document.getElementById('showForm');
+    const titleInput = document.getElementById('title');
+    const directorInput = document.getElementById('director');
+    const yearInput = document.getElementById('year');
+    const reviewInput = document.getElementById('reviewText');
+    const saveBtn = document.getElementById('saveBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const showsContainer = document.getElementById('showsContainer');
+    const showCount = document.getElementById('showCount');
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
     
-    const shows = getShows();
-    const newShow = {
-        title: titleInput.value.trim(),
-        director: directorInput.value.trim(),
-        year: yearInput.value.trim(),
-        reviewText: reviewInput.value.trim()
+    let editingIndex = null;
+    
+    window.updateStats = function() {
+        const statsDashboard = document.getElementById('statsDashboard');
+        if (!statsDashboard) return;
+        
+        const shows = getShows();
+        statsDashboard.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-value">${shows.length}</div>
+                <div class="stat-label">total shows</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${new Set(shows.map(s => s.year)).size}</div>
+                <div class="stat-label">years</div>
+            </div>
+        `;
     };
     
-    if (editingIndex !== null) {
-        shows[editingIndex] = newShow;
-        showToast('show updated', 'success');
-    } else {
-        shows.push(newShow);
-        showToast('show added', 'success');
+    window.renderAdminList = function() {
+        if (!showsContainer || !showCount) return;
+        
+        const shows = getShows();
+        showCount.textContent = shows.length;
+
+        showsContainer.innerHTML = shows.map((show, index) => `
+            <div class="show-item">
+                <div>
+                    <strong>${show.title}</strong> ${show.year ? '(' + show.year + ')' : ''}
+                    <br><small>${show.director || ''}</small>
+                </div>
+                <div class="show-actions">
+                    <button onclick="editShow(${index})">edit</button>
+                    <button onclick="deleteShow(${index})" style="background:#e8cfc0;">delete</button>
+                </div>
+            </div>
+        `).join('');
+    };
+    
+    window.editShow = function(index) {
+        const shows = getShows();
+        const show = shows[index];
+        if (titleInput) titleInput.value = show.title;
+        if (directorInput) directorInput.value = show.director || '';
+        if (yearInput) yearInput.value = show.year || '';
+        if (reviewInput) reviewInput.value = show.reviewText;
+        editingIndex = index;
+        if (saveBtn) saveBtn.textContent = '✎ update show';
+    };
+    
+    window.deleteShow = function(index) {
+        if (confirm('delete this show?')) {
+            const shows = getShows();
+            shows.splice(index, 1);
+            saveShows(shows);
+            renderAdminList();
+            updateStats();
+            showToast('show deleted', 'success');
+            if (editingIndex === index) clearForm();
+        }
+    };
+    
+    function clearForm() {
+        if (titleInput) titleInput.value = '';
+        if (directorInput) directorInput.value = '';
+        if (yearInput) yearInput.value = '';
+        if (reviewInput) reviewInput.value = '';
+        editingIndex = null;
+        if (saveBtn) saveBtn.textContent = '➕ add show';
     }
     
-    saveShows(shows);
-    renderAdminList();
-    updateStats();
-    clearForm();
-});
-
-clearBtn.addEventListener('click', clearForm);
-
-// Export
-exportBtn.addEventListener('click', () => {
-    const dataStr = JSON.stringify(getShows(), null, 2);
-    const blob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hamisa_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    showToast('exported', 'success');
-});
-
-// Import
-importBtn.addEventListener('click', () => importFile.click());
-
-importFile.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const shows = JSON.parse(e.target.result);
-                saveShows(shows);
-                renderAdminList();
-                updateStats();
-                showToast(`imported ${shows.length} shows`, 'success');
-            } catch {
-                showToast('invalid file', 'error');
+    if (showForm) {
+        showForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!titleInput || !reviewInput) return;
+            
+            const shows = getShows();
+            const newShow = {
+                title: titleInput.value.trim(),
+                director: directorInput ? directorInput.value.trim() : '',
+                year: yearInput ? yearInput.value.trim() : '',
+                reviewText: reviewInput.value.trim()
+            };
+            
+            if (editingIndex !== null) {
+                shows[editingIndex] = newShow;
+                showToast('show updated', 'success');
+            } else {
+                shows.push(newShow);
+                showToast('show added', 'success');
             }
-        };
-        reader.readAsText(file);
+            
+            saveShows(shows);
+            renderAdminList();
+            updateStats();
+            clearForm();
+        });
+    }
+    
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearForm);
+    }
+    
+    // Export
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const dataStr = JSON.stringify(getShows(), null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hamisa_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showToast('exported', 'success');
+        });
+    }
+    
+    // Import
+    if (importBtn && importFile) {
+        importBtn.addEventListener('click', () => importFile.click());
+        
+        importFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const shows = JSON.parse(e.target.result);
+                        saveShows(shows);
+                        renderAdminList();
+                        updateStats();
+                        showToast(`imported ${shows.length} shows`, 'success');
+                    } catch {
+                        showToast('invalid file', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
     }
 });
 
 // ===============================================================
 // BACK TO TOP
 // ===============================================================
-const backToTop = document.getElementById('backToTop');
+document.addEventListener('DOMContentLoaded', function() {
+    const backToTop = document.getElementById('backToTop');
+    
+    if (backToTop) {
+        window.addEventListener('scroll', () => {
+            backToTop.classList.toggle('visible', window.scrollY > 300);
+        });
 
-window.addEventListener('scroll', () => {
-    backToTop.classList.toggle('visible', window.scrollY > 300);
-});
-
-backToTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 });
 
 // ===============================================================
-// INIT
+// INITIAL RENDER
 // ===============================================================
-renderReviews();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initial render');
+    renderReviews();
+});
