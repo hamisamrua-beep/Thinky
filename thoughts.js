@@ -3,7 +3,7 @@
 // ===============================================================
 // IMPORTANT: Replace this URL with your actual SheetDB API URL!
 // Get one for free at https://sheetdb.io
-const SHEETDB_URL = 'https://sheetdb.io/api/v1/YOUR_API_KEY_HERE'; 
+const SHEETDB_URL = 'https://sheetdb.io/api/v1/tv79omjmeb41g'; 
 const ADMIN_PASSWORD = 'cute123';
 
 // ===============================================================
